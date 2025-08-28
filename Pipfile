@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+openai = "*"
+beautifulsoup4 = "*"
+numpy = "*"
+pandas = "*"
+requests = "*"
+wikipedia = "*"
+python-dotenv = "*"
+minsearch = "*"
+scikit-learn = "*"
+qdrant-client = {extras = ["fastembed"], version = ">=1.14.2"}
+groq = "*"
+google-genai = "*"
+flask = "*"
+psycopg2-binary = "*"
+
+[dev-packages]
+tqdm = "*"
+
+[requires]
+python_version = "3.12"
