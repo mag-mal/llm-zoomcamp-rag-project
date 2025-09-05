@@ -4,13 +4,13 @@ from qdrant_client import QdrantClient, models
 
 COLLECTION_NAME = "rag-project-sparse-and-dense"
 DATA_PATH = os.getenv("DATA_PATH", "../data/plants_data.csv")
-
+QDRANT_URL = os.getenv('QDRANT_URL')
 # Qdrant client
 
-def get_client(url: str = "http://localhost:6333") -> QdrantClient:
+def get_client(url: str = QDRANT_URL) -> QdrantClient:
     """Initialize and return a Qdrant client."""
+    #url = os.getenv("QDRANT_URL", "http://localhost:6333")
     return QdrantClient(url)
-
 
 def load_data(path: str = DATA_PATH) -> list[dict]:
     """CSV -> list[dict]."""
@@ -20,7 +20,7 @@ def load_data(path: str = DATA_PATH) -> list[dict]:
 def recreate_collection(client: QdrantClient) -> None:
     """(Re)create collection with dense + sparse configs."""
     if client.collection_exists(COLLECTION_NAME):
-        client.delete_collection(COLLECTION_NAME)  
+        client.delete_collection(COLLECTION_NAME)
 
     client.create_collection(
         collection_name=COLLECTION_NAME,
@@ -36,6 +36,7 @@ def recreate_collection(client: QdrantClient) -> None:
             )
         }
     )
+    print("collection created")
 
 def upsert_points(client: QdrantClient, docs: list[dict]) -> None:
     """Build points from docs and upsert them into the collection."""
