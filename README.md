@@ -72,14 +72,6 @@ The **Your Indoor Plant Knowledge Assistant** is built as a **RAG-powered chatbo
 This project makes plant care knowledge **accessible, accurate, and conversational**, helping users make informed decisions about their indoor greenery.
 
 
-## Preparation 
-For dependency management, we use pipenv, so you need to install it:
-
-pip install pipenv
-Once installed, you can install the app dependencies:
-
-pipenv install --dev
-
 
 ## Evaluating retrieval
 To evaluate search results I created ground truth retrieval.
@@ -136,7 +128,84 @@ I used Flask app provides for interacting with the RAG system:
 Conversations are stored in memory with fields for `conversation_id`, `question`, `answer`, `timestamp`, and optional `feedback`.  
 In production, this should be replaced with a database.
 
-## Running the application
+## Starting database
+
+Before the application starts for the first time, the database needs to be initialized.
+
+```bash
+docker-compose up postgres
+```
+```bash
+pipenv shell
+
+cd plant_knowledge_assistant
+
+export POSTGRES_HOST=localhost
+python db_prep.py
+````
+## Running the application locally
+
+If you want to run the application locally, start only postres, grafana and qdrant:
+
+```bash
+docker-compose up postgres grafana qdrant
+````
+If you previously started all applications with docker-compose up, you need to stop the app:
+
+```bash
+docker-compose stop app
+```
+
+```bash
+pipenv shell
+cd plant_knowledge_assistant
+export POSTGRES_HOST=localhost
+export QDRANT_URL=http://localhost:6333
+python app.py
+```
+
+and then start asking with curl (below).
+## Running with docker
+
+```bash
+docker-compose up postgres grafana qdrant
+````
+If you previously started all applications with docker-compose up, you need to stop the app:
+
+```bash
+docker-compose stop app
+```
+Build an image:
+```bash
+docker build -t plant-knowledge-assistant .
+```
+```bash
+docker run -it --rm \
+    --network project_plant-knowledge-assistant \
+    --env-file=".env" \
+    -e DATA_PATH="data/plants_data.csv" \
+    -e GROQ_API_KEY=Your_api_key \
+    -e QDRANT_URL="http://qdrant:6333" \
+    -p 5000:5000 \
+    plant-knowledge-assistant
+```
+
+
+For dependency management, we use pipenv, so you need to install it:
+
+```bash
+pip install pipenv
+```
+Once installed, you can install the app dependencies:
+
+```bash
+pipenv install --dev
+```
+
+Then run application:
+```bash
+pipenv run python app.py
+```
 
 Asking questions: 
 ```bash
@@ -167,4 +236,10 @@ Answer:
   "feedback": 1,
   "message": "Feedback received successfully"
 }
+```
+
+## Running application with docker
+
+```bash
+docker-compose up
 ```
