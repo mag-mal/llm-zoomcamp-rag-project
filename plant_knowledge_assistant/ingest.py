@@ -9,8 +9,7 @@ QDRANT_URL = os.getenv('QDRANT_URL')
 
 def get_client(url: str = QDRANT_URL) -> QdrantClient:
     """Initialize and return a Qdrant client."""
-    #url = os.getenv("QDRANT_URL", "http://localhost:6333")
-    return QdrantClient(url)
+    return QdrantClient(url, timeout=60.0)
 
 def load_data(path: str = DATA_PATH) -> list[dict]:
     """CSV -> list[dict]."""
