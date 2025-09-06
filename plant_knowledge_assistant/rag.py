@@ -1,3 +1,5 @@
+import json
+from time import time
 import ingest
 from qdrant_client import QdrantClient, models
 from groq import Groq
@@ -75,6 +77,7 @@ def build_prompt(query, search_results, prompt_template, entry_template):
     prompt = prompt_template.format(question=query, context=context).strip()
     return prompt
 
+
 def gpt_oss_answer(content, model="openai/gpt-oss-20b"):
   """
     Generate GPT-OSS model response from Groq Api.
@@ -112,6 +115,39 @@ def gpt_oss_answer(content, model="openai/gpt-oss-20b"):
   return joined_answer
 
 
+
+llm_judge_prompt = """
+You are an expert evaluator for a RAG system.
+Your task is to analyze the relevance of the generated answer to the given question.
+Based on the relevance of the generated answer, you will classify it
+as "NON_RELEVANT", "PARTLY_RELEVANT", or "RELEVANT".
+
+Here is the data for evaluation:
+
+Question: {question}
+Generated Answer: {answer_llm}
+
+Please analyze the content and context of the generated answer in relation to the question
+and provide your evaluation in parsable JSON without using code blocks:
+
+{{
+  "Relevance": "NON_RELEVANT" | "PARTLY_RELEVANT" | "RELEVANT",
+  "Explanation": "[Provide a brief explanation for your evaluation]"
+}}
+""".strip()
+
+
+def evaluate_relevance(question, answer):
+    prompt = llm_judge_prompt.format(question=question, answer_llm=answer)
+    evaluation = gpt_oss_answer(prompt)
+    try:
+        json_eval = json.loads(evaluation)
+        return json_eval
+    except json.JSONDecodeError:
+        result = {"Relevance": "UNKNOWN", "Explanation": "Failed to parse evaluation"}
+        return result
+
+
 def rag_groq(query, prompt_template, entry_template):
     """
     Run RAG with Groq GPT-OSS model.
@@ -124,6 +160,7 @@ def rag_groq(query, prompt_template, entry_template):
     Returns:
         str: Model-generated answer.
     """
+    t0 = time()
     search_results = multi_stage_search(query)
     search_results_list = []
 
@@ -133,5 +170,18 @@ def rag_groq(query, prompt_template, entry_template):
 
     prompt = build_prompt(query, search_results_list, prompt_template, entry_template)
     answer = gpt_oss_answer(prompt)
-    
-    return answer
+
+    relevance = evaluate_relevance(query, answer)
+    t1 = time()
+    took = t1 - t0
+
+    answer_data = {
+        "answer": answer,
+        #"model_used": model,
+        "response_time": took,
+        "relevance": relevance.get("Relevance", "UNKNOWN"),
+        "relevance_explanation": relevance.get(
+            "Explanation", "Failed to parse evaluation"
+        ),
+    }
+    return answer_data
