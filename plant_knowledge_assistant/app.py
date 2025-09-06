@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import uuid
 from datetime import datetime
+import db
 import rag
 from dotenv import load_dotenv
 
@@ -9,8 +10,6 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# In-memory storage for conversations (replace with database later)
-conversations = {}
 
 @app.route('/ask', methods=['POST'])
 def ask_question():
@@ -50,30 +49,29 @@ def ask_question():
         conversation_id = str(uuid.uuid4())
         
         # Get answer from RAG system
-        answer = rag.rag_groq(
+        answer_data  = rag.rag_groq(
             query=question,
             prompt_template=rag.prompt_template1,
             entry_template=rag.entry_template1
         )
         
         # Store conversation for potential feedback
-        conversation_data = {
+        results = {
             "conversation_id": conversation_id,
             "question": question,
-            "answer": answer,
+            "answer": answer_data["answer"],
             "timestamp": datetime.utcnow().isoformat(),
-            "feedback": None
         }
-        
-        conversations[conversation_id] = conversation_data
-        
+
+
+        db.save_conversation(
+            conversation_id=conversation_id,
+            question=question,
+            answer_data=answer_data,
+        )
+
         # Return response
-        return jsonify({
-            "conversation_id": conversation_id,
-            "question": question,
-            "answer": answer,
-            "timestamp": conversation_data["timestamp"]
-        }), 200
+        return jsonify(results), 200
         
     except Exception as e:
         return jsonify({
@@ -126,17 +124,10 @@ def submit_feedback():
             return jsonify({
                 "error": "Feedback must be either +1 (positive) or -1 (negative)"
             }), 400
-        
-        # Check if conversation exists
-        if conversation_id not in conversations:
-            return jsonify({
-                "error": "Conversation ID not found"
-            }), 404
-        
-        # Store feedback
-        conversations[conversation_id]['feedback'] = feedback
-        conversations[conversation_id]['feedback_timestamp'] = datetime.utcnow().isoformat()
-        
+
+
+        db.save_feedback(conversation_id, feedback)
+
         return jsonify({
             "message": "Feedback received successfully",
             "conversation_id": conversation_id,
