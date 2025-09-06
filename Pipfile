@@ -18,6 +18,10 @@ groq = "*"
 google-genai = "*"
 flask = "*"
 psycopg2-binary = "*"
+fastembed = "*"
+gunicorn = "*"
+pipenv = "*"
+pgcli = "*"
 
 [dev-packages]
 tqdm = "*"
