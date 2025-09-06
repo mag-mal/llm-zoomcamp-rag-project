@@ -31,6 +31,9 @@ def init_db():
                     id TEXT PRIMARY KEY,
                     question TEXT NOT NULL,
                     answer TEXT NOT NULL,
+                    response_time FLOAT NOT NULL,
+                    relevance TEXT NOT NULL,
+                    relevance_explanation TEXT NOT NULL,
                     timestamp TIMESTAMP WITH TIME ZONE NOT NULL
                 )
             """)
@@ -58,17 +61,21 @@ def save_conversation(conversation_id, question, answer_data, timestamp=None):
             cur.execute(
                 """
                 INSERT INTO conversations 
-                (id, question, answer, timestamp)
-                VALUES (%s, %s, %s, %s)
+                (id, question, answer, response_time, relevance, relevance_explanation, timestamp)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     conversation_id,
                     question,
                     answer_data["answer"],
+                    answer_data["response_time"],
+                    answer_data["relevance"],
+                    answer_data["relevance_explanation"],
                     timestamp
                 ),
             )
         conn.commit()
+        print("saved")
     finally:
         conn.close()
 
@@ -144,11 +151,11 @@ def check_timezone():
             # Use py_time instead of tz for insertion
             cur.execute("""
                 INSERT INTO conversations 
-                (id, question, answer, timestamp)
-                VALUES (%s, %s, %s, %s)
+                (id, question, answer, response_time, relevance, relevance_explanation, timestamp)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING timestamp;
             """,
-            ('test', 'test question', 'test answer', py_time))
+            ('test', 'test question', 'test answer', 0.0, 'test relevance', 'test explanation', py_time))
 
             inserted_time = cur.fetchone()[0]
             print(f"Inserted time (UTC): {inserted_time}")
