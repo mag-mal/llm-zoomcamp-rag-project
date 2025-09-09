@@ -6,8 +6,10 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 
-client = ingest.main()
+# Load environment variables first
+load_dotenv()
 groq_api_key = os.getenv('GROQ_API_KEY')
+client = ingest.main()
 
 def multi_stage_search(query, limit = 5):
     """
@@ -23,6 +25,7 @@ def multi_stage_search(query, limit = 5):
     Returns:
         list[models.ScoredPoint]: Ranked search results with payload data.
     """
+    # Only ingest if collection doesn't exist or is empty
     results = client.query_points(
         collection_name=ingest.COLLECTION_NAME,
         prefetch=[
