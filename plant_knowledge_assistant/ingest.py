@@ -1,4 +1,6 @@
 import os
+import time
+
 import pandas as pd
 from qdrant_client import QdrantClient, models
 
@@ -18,6 +20,8 @@ def load_data(path: str = DATA_PATH) -> list[dict]:
 
 def recreate_collection(client: QdrantClient) -> None:
     """(Re)create collection with dense + sparse configs."""
+
+    # Now safe to check collection
     if client.collection_exists(COLLECTION_NAME):
         client.delete_collection(COLLECTION_NAME)
 
