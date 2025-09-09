@@ -1,5 +1,5 @@
-# Your Indoor Plant Knowledge Assistant
-
+# Plant Knowledge Assistant
+![Chatbot Screenshot](images/plant_knowledge_assistant.png)
 ## Problem Description
 
 Houseplants are more than just decorative elements — they enhance indoor spaces by improving air quality, reducing stress, and creating a more welcoming environment. Their presence has been shown to promote emotional well-being and even boost productivity. Despite their benefits, plant owners often face several challenges:
@@ -24,8 +24,8 @@ This ensures that plant owners have **instant access to accurate, relevant, and 
 The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a knowledge base and an LLM are used in the flow):
 
 - **Retrieval Step (searching in knowledge base)** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
-- **Augmentation Step (building prompt) ** – Retrieved information is combined into a context package for the AI model.  
-- **Generation Step (LLM) ** – The AI produces a conversational, accurate, and user-friendly answer.  
+- **Augmentation Step (building prompt)** – Retrieved information is combined into a context package for the AI model.  
+- **Generation Step (LLM)** – The AI produces a conversational, accurate, and user-friendly answer.  
 
 
 ## Data Description
@@ -40,10 +40,8 @@ Example entry:
 ```json
 {
   "name": "Monstera deliciosa",
-  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name "Swiss cheese plant" is also used for the related species from the same genus, Monstera adansonii. The common name "split-leaf philodendron" is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron.
-Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
-  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a "moderately greedy plant," in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun.
-Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
+  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name "Swiss cheese plant" is also used for the related species from the same genus, Monstera adansonii. The common name "split-leaf philodendron" is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
+  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a "moderately greedy plant," in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
   "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
 }
 ```
@@ -57,14 +55,14 @@ The results are here:
 
 My code is divided into two main stages:
 
-1. Collecting Plant Names from the Category Page
+**1. Collecting Plant Names from the Category Page**
 
 * The code sends a request to the Wikipedia category “House plants” page.
 
 * It uses BeautifulSoup to parse the HTML and extract the titles of all pages (plant names) listed under that category.
 
 
-2. Retrieving Detailed Plant Information
+**2. Retrieving Detailed Plant Information**
 
 * For each plant name, the wikipedia Python library is used to fetch the plant’s Wikipedia page.
 
@@ -73,8 +71,8 @@ My code is divided into two main stages:
 
 ## Retrieval evaluation
 To evaluate search results I created ground truth retrieval.
-* dataset: data/ground-truth-retrieval-5q.csv
-* notebook: notebooks/generating_ground_truth_dataset.ipynb
+* Dataset: data/ground-truth-retrieval-5q.csv
+* Notebook: notebooks/generating_ground_truth_dataset.ipynb
 
 Using plant records as input, it creates five relevant, self-contained questions per plant (skipping missing data), then flattens results into a pandas DataFrame of `(id, question)` pairs for training or evaluation.
 
@@ -269,8 +267,7 @@ Answer:
 
 The app is monitored with **Grafana** connected to **PostgreSQL**, which stores conversation logs and feedback.  
 
-<details>
-<summary>🔍 Dashboard Details</summary>
+### 🔍 Dashboard Details
 
 - **Last 10 Questions (Table)** – recent user queries with answers and relevance.  
 - **Questions Over Time (Time Series)** – query volume trend.  
