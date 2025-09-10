@@ -72,9 +72,8 @@ To evaluate search results, I built a ground truth dataset. For each plant recor
 With this dataset linking questions to the correct answer (plant record), I evaluated different search methods for retrieval performance.
 * Notebook: [notebooks/evaluating_retrieval.ipynb](notebooks/evaluating_retrieval.ipynb)
 
-I evaluated different search methods for retrieval performance.
 The table below reports **Hit Rate, Recall at First Position, and Mean Reciprocal Rank (MRR)**, where higher values indicate better performance. 
-The **hybrid search** method achieves the best overall results. My hybrid search algorithm combines dense semantic search (Jina embeddings) and sparse keyword search (BM25) in a multi-stage retrieval and reranking process.
+The **hybrid search** method achieves the best overall results. It combines dense semantic search (Jina embeddings) and sparse keyword search (BM25) in a multi-stage retrieval and reranking process.
 
 | Method                      | Hit Rate | Recall @ First Pos | MRR     |
 |-----------------------------|----------|--------------------|---------|
