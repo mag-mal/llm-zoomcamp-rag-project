@@ -2,22 +2,54 @@
 ![Chatbot Screenshot](images/plant_knowledge_assistant.png)
 ## Problem Description
 
-Houseplants are more than just decorative elements — they enhance indoor spaces by improving air quality, reducing stress, and creating a more welcoming environment. Their presence has been shown to promote emotional well-being and even boost productivity. Despite their benefits, plant owners often face several challenges:
-
-- **Identifying care needs** – Each plant species has unique requirements for light, water, temperature, and soil, and this information isn’t always readily available.  
-- **Understanding toxicity** – Many common houseplants can be harmful to pets, yet toxicity details are often missing or hard to find.  
-- **Finding reliable information** – Accurate plant care advice is scattered across multiple sources, making it difficult and time-consuming to get clear answers.
-
-My project addresses these problems through the development of an intelligent **Retrieval-Augmented Generation (RAG)** application, functioning as a **personal indoor plant assistant**. 
-By combining a structured plant database with a conversational AI interface, users can ask natural-language questions such as:
+Houseplants improve air quality, reduce stress, and boost productivity, but caring for them can be challenging. Owners often struggle with **knowing each plant’s care needs, understanding toxicity risks for pets, or finding reliable information**.
+My project addresses these problems through the development of an intelligent **Retrieval-Augmented Generation (RAG)** application, functioning as a **personal plant assistant**. 
+By combining a structured plant database with a conversational AI system, users can ask natural-language questions such as:
 
 - the care requirements of a specific plant,
 - whether a plant is safe for pets,
 - the plant’s origin and ideal growing conditions, or
 - recommendations for plants that meet certain criteria (e.g., low-light plants safe for dogs).
 
-The system then provides clear, concise, and factually grounded answers.
-This ensures that plant owners have **instant access to accurate, relevant, and easy-to-understand guidance**, enabling them to care for their plants more confidently and make informed decisions that keep both their plants and pets healthy.
+**The system then provides clear, concise, and factually grounded answers**, enabling owners to care for their plants more confidently and make informed decisions that keep both their plants and pets healthy.
+
+## Data Description
+
+The dataset contains **197 records**, each representing a plant species with detailed information, including:  
+- **`name`** – The scientific name of the plant.  
+- **`summary`** – Background information, including origin, appearance, and key characteristics.  
+- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance, and propagation methods. This value may be empty for some plants.
+- **`toxicity`** – Notes on whether the plant is toxic to pets or humans. This value may be empty for some plants.
+
+Example entry:
+```json
+{
+  "name": "Monstera deliciosa",
+  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name 'Swiss cheese plant' is also used for the related species from the same genus, Monstera adansonii. The common name 'split-leaf philodendron' is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
+  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a 'moderately greedy plant' in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
+  "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
+}
+```
+
+### Data generation
+I gathered structured information about house plants from Wikipedia webpage: https://en.wikipedia.org/wiki/Category:House_plants. 
+You can find collected data and accompanying notebook here:
+
+* Dataset: [data/plants_data.csv](data/plants_data.csv)
+* Notebook: [notebooks/getting_data.ipynb](notebooks/getting_data.ipynb)
+
+My code works in two stages:
+1. Collecting Plant Names – It scrapes the Wikipedia “House plants” category with BeautifulSoup to extract plant names.
+2. Fetching Plant Details – For each plant, it uses the wikipedia library to get a summary and searches the page text for Cultivation and Toxicity sections with regex.
+
+## Technology
+
+* Python 3.12
+* Docker and Docker Compose for containerization
+* Hybrid search (jina embeddings + BM25) using Qdrant
+* Flask as the API interface
+* Grafana for monitoring and PostgreSQL as the backend for it
+* Gpt-oss as an LLM
 
 ## Retrieval flow
 
@@ -28,54 +60,14 @@ The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a 
 - **Generation Step (LLM)** – The AI produces a conversational, accurate, and user-friendly answer.  
 
 
-## Data Description
-
-The dataset contains **197 records**, each representing a plant species with detailed information, including:  
-- **`name`** – The scientific name of the plant.  
-- **`summary`** – Background information, including origin, appearance, and key characteristics.  
-- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance, and propagation methods. This
-- **`toxicity`** – Notes on whether the plant is toxic to pets or humans.  
-
-Example entry:
-```json
-{
-  "name": "Monstera deliciosa",
-  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name "Swiss cheese plant" is also used for the related species from the same genus, Monstera adansonii. The common name "split-leaf philodendron" is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
-  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a "moderately greedy plant," in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
-  "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
-}
-```
-
-### Data generation
-I gathered structured information about house plants from Wikipedia webpage: https://en.wikipedia.org/wiki/Category:House_plants. 
-The results are here:
-
-* Dataset: data/plants_data.csv
-* Notebook: notebooks/getting_data.ipynb
-
-My code is divided into two main stages:
-
-**1. Collecting Plant Names from the Category Page**
-
-* The code sends a request to the Wikipedia category “House plants” page.
-
-* It uses BeautifulSoup to parse the HTML and extract the titles of all pages (plant names) listed under that category.
-
-
-**2. Retrieving Detailed Plant Information**
-
-* For each plant name, the wikipedia Python library is used to fetch the plant’s Wikipedia page.
-
-* The code retrieves a short summary of the plant and searches the full page content for sections on Cultivation (if available) and Toxicity (if available) using regular expressions.
-
-
 ## Retrieval evaluation
-To evaluate search results I created ground truth retrieval.
-* Dataset: data/ground-truth-retrieval-5q.csv
-* Notebook: notebooks/generating_ground_truth_dataset.ipynb
 
-Using plant records as input, it creates five relevant, self-contained questions per plant (skipping missing data), then flattens results into a pandas DataFrame of `(id, question)` pairs for training or evaluation.
+To evaluate search results, I created ground truth retrieval.
 
+* Dataset: [data/ground-truth-retrieval-5q.csv](data/ground-truth-retrieval-5q.csv)
+* Notebook: [notebooks/generating_ground_truth_dataset.ipynb](notebooks/generating_ground_truth_dataset.ipynb)
+
+Using plant records as input, it creates five relevant, self-contained questions per plant, then flattens results into a pandas DataFrame of `(id, question)`.
 
 The table below shows the evaluation results of different search methods based on **Hit Rate**, **Recall at First Position**, and **Mean Reciprocal Rank (MRR)**.  
 Higher values indicate better performance across these metrics. The **hybrid search approach** achieves the best overall results.  
