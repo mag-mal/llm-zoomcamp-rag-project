@@ -26,7 +26,7 @@ Example entry:
 {
   "name": "Monstera deliciosa",
   "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name 'Swiss cheese plant' is also used for the related species from the same genus, Monstera adansonii. The common name 'split-leaf philodendron' is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
-  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a 'moderately greedy plant' in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 C or 30 F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 C (55–59 F) is preferable, allowing continuous growth. Growth ceases below 10 C (50 F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
+  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a 'moderately greedy plant' in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
   "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
 }
 ```
@@ -49,10 +49,11 @@ My code works in two stages:
 * Hybrid search (jina embeddings + BM25) using Qdrant
 * Flask as the API interface
 * Grafana for monitoring and PostgreSQL as the backend for it
-* Gpt-oss as an LLM
+* openai/gpt-oss-20b as an LLM
 
 ## Retrieval flow
 
+* [plant_knowledge_assistant/rag.py](plant_knowledge_assistant/rag.py)
 The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a knowledge base and an LLM are used in the flow):
 
 - **Retrieval Step (searching in knowledge base)** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
@@ -62,32 +63,34 @@ The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a 
 
 ## Retrieval evaluation
 
-To evaluate search results, I created ground truth retrieval.
+To evaluate search results, I built a ground truth dataset. For each plant record, I used an LLM to generate five relevant, self-contained questions.
 
 * Dataset: [data/ground-truth-retrieval-5q.csv](data/ground-truth-retrieval-5q.csv)
 * Notebook: [notebooks/generating_ground_truth_dataset.ipynb](notebooks/generating_ground_truth_dataset.ipynb)
 
-Using plant records as input, it creates five relevant, self-contained questions per plant, then flattens results into a pandas DataFrame of `(id, question)`.
-
-The table below shows the evaluation results of different search methods based on **Hit Rate**, **Recall at First Position**, and **Mean Reciprocal Rank (MRR)**.  
-Higher values indicate better performance across these metrics. The **hybrid search approach** achieves the best overall results.  
+With this dataset linking questions to the correct answer (plant record), I evaluated different search methods for retrieval performance.
+* Notebook: [notebooks/evaluating_retrieval.ipynb](notebooks/evaluating_retrieval.ipynb)
+I evaluated different search methods for retrieval performance.
+The table below reports **Hit Rate, Recall at First Position, and Mean Reciprocal Rank (MRR)**, where higher values indicate better performance. 
+The **hybrid search** method achieves the best overall results. My hybrid search algorithm combines dense semantic search (Jina embeddings) and sparse keyword search (BM25) in a multi-stage retrieval and reranking process.
 
 | Method                      | Hit Rate | Recall @ First Pos | MRR     |
 |-----------------------------|----------|--------------------|---------|
 | minsearch                   | 0.895 | 0.822           | 0.848|
 | vector_search_tfidf_svd     | 0.922 | 0.801           | 0.853|
-| vector_search_jina_emb_metrics | 0.928 | 0.861        | 0.887|
-| hybrid_search_metrics       | 0.941 | 0.871           | 0.900|
+| vector_search_jina_emb      | 0.928 | 0.861        | 0.887|
+| hybrid_search_jina_emb_bm25 | 0.941 | 0.871           | 0.900|
 
 
 ## LLM evaluation
-To evaluate LLM answer I chceck 2 models: 
-* openai/gpt-oss-20b with groq api https://console.groq.com with 1000 free requests for this model
-* gemini-2.5-flash-lite with gemini api
 
-For the first one I used groq api with 1000 free requests for this model: https://console.groq.com
+* Notebook: [notebooks/evaluating_rag.ipynb](notebooks/evaluating_rag.ipynb)
+Using the search results as context, I prompted the LLM to answer questions from the ground truth dataset.  
+Then I used LLM as a judge method to evaluate answers generated by two different LLMs:
+* openai/gpt-oss-20b (Groq API https://console.groq.com with 1000 free requests for this model)
+* gemini-2.5-flash-lite (Google API https://aistudio.google.com/app/apikey with 1000 free requests for this model)
 
-The table below shows the proportion of responses judged as **RELEVANT**, **PARTLY_RELEVANT**, or **NON_RELEVANT** for different models and prompts (200 samples, 7-shot).  The best results were obtained with GPT-OSS and prompt1.
+The table below shows the proportion of responses judged by LLM as **RELEVANT**, **PARTLY_RELEVANT**, or **NON_RELEVANT** for two different prompts.  The best results were obtained with GPT-OSS and prompt1.
 
 | Model / Prompt                  | RELEVANT | PARTLY_RELEVANT | NON_RELEVANT |
 |---------------------------------|----------|-----------------|--------------|
@@ -99,6 +102,7 @@ The table below shows the proportion of responses judged as **RELEVANT**, **PART
 
 ## Inference
 
+* [plant_knowledge_assistant/app.py](plant_knowledge_assistant/app.py)
 I used Flask app provides for interacting with the RAG system:
 
 - **`POST /ask`** – Submit a question and receive an answer from the RAG pipeline.  
@@ -113,7 +117,9 @@ Conversations are stored in database with fields for `conversation_id`, `questio
 Feedback is stored in database with fields for `conversation_id` and  `feedback`.
 
 ## Ingestion pipeline
-I built python script [ingest.py](ingest.py) which prepares the plant dataset for use in the RAG pipeline. 
+
+* [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
+I built python script which prepares the plant dataset for use in the RAG pipeline. 
 It connects to Qdrant, creates a collection with both dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each row of the dataset into a vector point with metadata. Once ingested, the data can be efficiently retrieved and combined with a language model during question answering.
 
 
@@ -167,7 +173,7 @@ docker-compose up
 
 ### Running the application locally
 
-If you want to run the application locally, start only postres, grafana and qdrant:
+If you want to run the application locally, start only postgres, grafana and qdrant:
 
 ```bash
 docker-compose up postgres grafana qdrant
@@ -273,4 +279,50 @@ The app is monitored with **Grafana** connected to **PostgreSQL**, which stores 
 ![Chatbot Screenshot](images/image1.png)
 ![Chatbot Screenshot](images/image2.png)
 ![Chatbot Screenshot](images/image3.png)
+
+## 📂 Project Structure
+
+```
+llm-zoomcamp-rag-project/
+│   .env                      # Environment variables (API keys, configs)
+│   .gitignore                # Git ignore rules
+│   docker-compose.yaml       # Docker Compose config for services
+│   Dockerfile                # Docker build instructions
+│   Pipfile                   # Python dependencies (Pipenv)
+│   Pipfile.lock              # Locked dependency versions
+│   README.md                 # Project documentation
+│   test.py                   # Basic test script
+│
+├── data/                     # Datasets for evaluation and its results
+│   ├── ground-truth-retrieval-5q.csv
+│   ├── plants_data.csv
+│   ├── rag_eval_gemini_flash_2_5_lite_prompt1.csv
+│   ├── rag_eval_gemini_flash_2_5_lite_prompt2.csv
+│   ├── rag_eval_gpt_oss_prompt1.csv
+│   └── rag_eval_gpt_oss_prompt2.csv
+│
+├── grafana/                  # Monitoring setup for Grafana
+│   ├── dashboard.json        # Dashboard configuration
+│   └── init.py               # Grafana initialization script
+│
+├── images/                   # Project images and diagrams
+│   ├── image1.png
+│   ├── image2.png
+│   ├── image3.png
+│   └── plant_knowledge_assistant.png
+│
+├── notebooks/                # Jupyter notebooks for experiments
+│   ├── evaluating_rag.ipynb
+│   ├── evaluating_retrieval.ipynb
+│   ├── generating_ground_truth_dataset.ipynb
+│   └── getting_data.ipynb
+│
+└── plant_knowledge_assistant/ # Core application code
+    ├── app.py                # Main app entry point
+    ├── db.py                 # Database setup and operations
+    ├── db_prep.py            # Database initialization script
+    ├── ingest.py             # Data ingestion pipeline
+    └── rag.py                # RAG (Retrieval-Augmented Generation) logic
+```
+
 
