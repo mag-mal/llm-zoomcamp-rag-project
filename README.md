@@ -1,5 +1,5 @@
 # Plant Knowledge Assistant
-![Chatbot Screenshot](images/plant_knowledge_assistant2.png)
+![Chatbot Screenshot](images/plant_knowledge_assistant.png)
 ## Problem Description
 
 Houseplants are more than just decorative elements — they enhance indoor spaces by improving air quality, reducing stress, and creating a more welcoming environment. Their presence has been shown to promote emotional well-being and even boost productivity. Despite their benefits, plant owners often face several challenges:
