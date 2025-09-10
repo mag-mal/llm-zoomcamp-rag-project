@@ -51,7 +51,7 @@ My code works in two stages:
 * Grafana for monitoring and PostgreSQL as the backend for it
 * openai/gpt-oss-20b as an LLM
 
-## Retrieval flow
+## Flow - RAG pipeline
 
 * [plant_knowledge_assistant/rag.py](plant_knowledge_assistant/rag.py)
 
@@ -101,6 +101,13 @@ The table below shows the proportion of responses judged by LLM as **RELEVANT**,
 | GEMINI FLASH 2.5 LITE PROMPT1 (200, 7) | 0.705    | 0.255           | 0.040        |
 | GEMINI FLASH 2.5 LITE PROMPT2 (200, 7) | 0.670    | 0.230           | 0.100        |
 
+# API
+
+## Ingestion pipeline
+
+* [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
+
+Based on retrieval experiment results, I developed a Python script to prepare the plant dataset for the RAG pipeline. The script connects to Qdrant, creates a collection with dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each dataset row into a vector point with metadata. Once ingested, the data can be efficiently retrieved and used by a language model for question answering.
 
 ## Inference
 
@@ -118,13 +125,6 @@ I used Flask app provides for interacting with the RAG system:
 
 Conversations are stored in database with fields for `conversation_id`, `question`, `answer`, `response_time`, `relevance`, `relevance_explanation`, `timestamp`, and optional `feedback`. 
 Feedback is stored in database with fields for `conversation_id` and  `feedback`.
-
-## Ingestion pipeline
-
-* [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
-
-I built python script which prepares the plant dataset for use in the RAG pipeline. 
-It connects to Qdrant, creates a collection with both dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each row of the dataset into a vector point with metadata. Once ingested, the data can be efficiently retrieved and combined with a language model during question answering.
 
 
 ## Containerization & Reproducibility
