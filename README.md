@@ -6,20 +6,193 @@ Houseplants improve air quality, reduce stress, and boost productivity, but cari
 My project addresses these problems through the development of an intelligent **Retrieval-Augmented Generation (RAG)** application, functioning as a **personal plant assistant**. 
 By combining a structured plant database with a conversational AI system, users can ask natural-language questions such as:
 
-- the care requirements of a specific plant,
-- whether a plant is safe for pets,
+- the care requirements of a specific plant, e.g. "How often should I water a Monstera?",
+- whether a plant is safe for pets, e.g. “Is Codiaeum variegatum toxic to cats?”,
 - the plant’s origin and ideal growing conditions, or
 - recommendations for plants that meet certain criteria (e.g., low-light plants safe for dogs).
 
 **The system then provides clear, concise, and factually grounded answers**, enabling owners to care for their plants more confidently and make informed decisions that keep both their plants and pets healthy.
 
+
+## RAG pipeline
+
+* [plant_knowledge_assistant/rag.py](plant_knowledge_assistant/rag.py)
+
+The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a knowledge base and an LLM are used in the flow):
+
+- **Retrieval Step (searching in knowledge base)** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
+- **Augmentation Step (building prompt)** – Retrieved information is combined into a context package for the AI model.  
+- **Generation Step (LLM)** – The AI produces a conversational, accurate, and user-friendly answer.  
+
+## Technology
+
+* Python 3.12
+* Docker and Docker Compose for containerization
+* Hybrid search (jina embeddings + BM25) using Qdrant
+* Flask as the API interface
+* Grafana for monitoring and PostgreSQL as the backend for it
+* openai/gpt-oss-20b as an LLM
+
+## Preparation
+
+### Starting database
+
+Before the application starts for the first time, the database needs to be initialized.
+
+```bash
+docker-compose up postgres
+```
+```bash
+pipenv shell
+
+cd plant_knowledge_assistant
+
+export POSTGRES_HOST=localhost
+python db_prep.py
+````
+To check the content of the database, use pgcli (already installed with pipenv):
+```bash
+pipenv run pgcli -h localhost -U your_username -d course_assistant -W
+```
+
+And select from this table:
+```bash
+select * from conversations;
+```
+
+### Update env variable
+
+Since I use GROQ API, you need to provide the API key. To do this insert your key into .env "GROQ_API_KEY" variable.
+
+## 🚀 Running the application 
+
+### Running with docker-compose (Recommended)
+
+The easiest way to run application is using docker-compose:
+```bash
+docker-compose up 
+````
+At this point, the API will be available at http://localhost:5000
+
+### Running the application locally
+
+If you want to run the Flask app directly on your machine (instead of inside a Docker container), follow these steps:
+
+1. Install pipenv (dependency manager):
+```bash
+pip install pipenv
+```
+
+2. Once installed, you can install the app dependencies:
+```bash
+pipenv install --dev
+```
+
+3. Start the supporting services (Postgres, Grafana, Qdrant) with Docker:
+```bash
+docker-compose up postgres grafana qdrant
+````
+
+> 💡 **Tip:** If you previously started all applications with docker-compose up, you need to stop the app:
+> ```bash
+> docker-compose stop app
+> ```
+
+4. Initialize and run the app locally
+
+Enter the virtual environment, set environment variables, and start the Flask app:
+```bash
+pipenv shell
+cd plant_knowledge_assistant
+export POSTGRES_HOST=localhost
+export QDRANT_URL=http://localhost:6333
+python app.py
+```
+
+At this point, the API will be available at http://localhost:5000
+
+### Running with docker without Compose
+
+If you prefer not to use Docker Compose for the app container, you can run the supporting services separately and then start the app manually.
+```bash
+docker-compose up postgres grafana qdrant
+````
+> 💡 **Tip:** If you previously started all applications with docker-compose up, you need to stop the app:
+> ```bash
+> docker-compose stop app
+> ```
+
+2. Build the application image
+```bash
+docker build -t plant-knowledge-assistant .
+```
+
+3. Run the container manually
+```bash
+docker run -it --rm \
+    --network project_plant-knowledge-assistant \
+    --env-file=".env" \
+    -e DATA_PATH="data/plants_data.csv" \
+    -e GROQ_API_KEY=your_api_key \
+    -e QDRANT_URL="http://qdrant:6333" \
+    -p 5000:5000 \
+    plant-knowledge-assistant
+```
+At this point, the API will be available at http://localhost:5000.
+
+## Sending requests:
+
+Once the application is running, you can interact with it in two ways:
+
+### Using requests
+
+I provided a `test.py` script that automatically picks a random question from the ground-truth dataset and sends it to the API.
+```bash
+pipenv run python test.py
+```
+
+### Using curl
+
+You can also manually send questions to the API using **curl** in your terminal:
+```bash
+curl -X POST http://localhost:5000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What plants are safe for cats?"}'
+```
+
+Answer:
+```json
+{
+  "answer": "**Answer**\n\nYes\u2014Monstera plants can be toxic to pets.  \n- **Monstera deliciosa** (the Swiss\u2011cheese plant) is **moderately toxic to cats and dogs** because it contains insoluble calcium oxalate crystals that can irritate the mouth, tongue, digestive tract, and skin.  \n- For **Monstera adansonii** and other Monstera species, the database does not provide toxicity information, so no definitive statement can be made about those specific species.  \n\nIf you have pets that might chew on or lick a Monstera, it\u2019s safest to keep the plant out of reach.",
+  "conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b",
+  "question": "Is monstera toxic for pets?",
+  "timestamp": "2025-08-25T09:07:01.084322"
+}
+```
+
+Sending feedback:
+```bash
+  curl -X POST http://localhost:5000/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b", "feedback": 1}'
+```
+
+Answer:
+```json
+{
+  "conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b",
+  "feedback": 1,
+  "message": "Feedback received successfully"
+}
+```
+
 ## Data Description
 
 The dataset contains **197 records**, each representing a plant species with detailed information, including:  
-- **`name`** – The scientific name of the plant.  
+- **`name`** – Scientific name.  
 - **`summary`** – Background information, including origin, appearance, and key characteristics.  
-- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance, and propagation methods. This value may be empty for some plants.
-- **`toxicity`** – Notes on whether the plant is toxic to pets or humans. This value may be empty for some plants.
+- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance (may be empty).
+- **`toxicity`** – Toxicity notes (may be empty)
 
 Example entry:
 ```json
@@ -41,26 +214,6 @@ You can find collected data and accompanying notebook here:
 My code works in two stages:
 1. Collecting Plant Names – It scrapes the Wikipedia “House plants” category with BeautifulSoup to extract plant names.
 2. Fetching Plant Details – For each plant, it uses the wikipedia library to get a summary and searches the page text for Cultivation and Toxicity sections with regex.
-
-## Technology
-
-* Python 3.12
-* Docker and Docker Compose for containerization
-* Hybrid search (jina embeddings + BM25) using Qdrant
-* Flask as the API interface
-* Grafana for monitoring and PostgreSQL as the backend for it
-* openai/gpt-oss-20b as an LLM
-
-## Flow - RAG pipeline
-
-* [plant_knowledge_assistant/rag.py](plant_knowledge_assistant/rag.py)
-
-The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a knowledge base and an LLM are used in the flow):
-
-- **Retrieval Step (searching in knowledge base)** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
-- **Augmentation Step (building prompt)** – Retrieved information is combined into a context package for the AI model.  
-- **Generation Step (LLM)** – The AI produces a conversational, accurate, and user-friendly answer.  
-
 
 ## Retrieval evaluation
 
@@ -126,144 +279,6 @@ I used Flask app provides for interacting with the RAG system:
 Conversations are stored in database with fields for `conversation_id`, `question`, `answer`, `response_time`, `relevance`, `relevance_explanation`, `timestamp`, and optional `feedback`. 
 Feedback is stored in database with fields for `conversation_id` and  `feedback`.
 
-
-## Containerization & Reproducibility
-
-### Starting database
-
-Before the application starts for the first time, the database needs to be initialized.
-
-```bash
-docker-compose up postgres
-```
-```bash
-pipenv shell
-
-cd plant_knowledge_assistant
-
-export POSTGRES_HOST=localhost
-python db_prep.py
-````
-To check the content of the database, use pgcli (already installed with pipenv):
-```bash
-pipenv run pgcli -h localhost -U your_username -d course_assistant -W
-```
-
-And select from this table:
-```bash
-select * from conversations;
-```
-
-### Environment
-For dependency management, we use pipenv, so you need to install it:
-
-```bash
-pip install pipenv
-```
-Once installed, you can install the app dependencies:
-
-```bash
-pipenv install --dev
-```
-
-Then run application:
-
-### Running with docker
-The easiest way to run application is using docker-compose:
-
-```bash
-docker-compose up 
-````
-
-### Running the application locally
-
-If you want to run the application locally, start only postgres, grafana and qdrant:
-
-```bash
-docker-compose up postgres grafana qdrant
-````
-If you previously started all applications with docker-compose up, you need to stop the app:
-
-```bash
-docker-compose stop app
-```
-
-```bash
-pipenv shell
-cd plant_knowledge_assistant
-export POSTGRES_HOST=localhost
-export QDRANT_URL=http://localhost:6333
-python app.py
-```
-
-### Running with docker without Compose
-
-```bash
-docker-compose up postgres grafana qdrant
-````
-If you previously started all applications with docker-compose up, you need to stop the app:
-
-```bash
-docker-compose stop app
-```
-Build an image:
-```bash
-docker build -t plant-knowledge-assistant .
-```
-```bash
-docker run -it --rm \
-    --network project_plant-knowledge-assistant \
-    --env-file=".env" \
-    -e DATA_PATH="data/plants_data.csv" \
-    -e GROQ_API_KEY=your_api_key \
-    -e QDRANT_URL="http://qdrant:6333" \
-    -p 5000:5000 \
-    plant-knowledge-assistant
-```
-
-## Sending requests:
-
-### Using requests
-When the application is running, you can use requests to send questions—use test.py for testing it:
-```bash
-pipenv run python test.py
-```
-It will pick a random question from the ground truth dataset and send it to the app.
-
-### Using curl
-
-If you want to ask question to THE Plant knowledge assistant you can just put below command in your terminal. 
-
-```bash
-curl -X POST http://localhost:5000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What plants are safe for cats?"}'
-```
-Answer:
-```json
-{
-  "answer": "**Answer**\n\nYes\u2014Monstera plants can be toxic to pets.  \n- **Monstera deliciosa** (the Swiss\u2011cheese plant) is **moderately toxic to cats and dogs** because it contains insoluble calcium oxalate crystals that can irritate the mouth, tongue, digestive tract, and skin.  \n- For **Monstera adansonii** and other Monstera species, the database does not provide toxicity information, so no definitive statement can be made about those specific species.  \n\nIf you have pets that might chew on or lick a Monstera, it\u2019s safest to keep the plant out of reach.",
-  "conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b",
-  "question": "Is monstera toxic for pets?",
-  "timestamp": "2025-08-25T09:07:01.084322"
-}
-```
-
-Sending feedback:
-```bash
-  curl -X POST http://localhost:5000/feedback \
-  -H "Content-Type: application/json" \
-  -d '{"conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b", "feedback": 1}'
-```
-
-Answer:
-```json
-{
-  "conversation_id": "dc27df41-5cba-4be3-a2b5-0a979460d99b",
-  "feedback": 1,
-  "message": "Feedback received successfully"
-}
-```
 
 ## 📊 Monitoring
 
