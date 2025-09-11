@@ -6,10 +6,10 @@ Houseplants improve air quality, reduce stress, and boost productivity, but cari
 My project addresses these problems through the development of an intelligent **Retrieval-Augmented Generation (RAG)** application, functioning as a **personal plant assistant**. 
 By combining a structured plant database with a conversational AI system, users can ask natural-language questions such as:
 
-- the care requirements of a specific plant, e.g. "How often should I water a Monstera?",
-- whether a plant is safe for pets, e.g. “Is Codiaeum variegatum toxic to cats?”,
-- the plant’s origin and ideal growing conditions, or
-- recommendations for plants that meet certain criteria (e.g., low-light plants safe for dogs).
+- the care requirements of a specific plant, (e.g. "How often should I water a Monstera?"),
+- whether a plant is safe for pets, (e.g. "Is Codiaeum variegatum toxic to cats?),
+- the plant’s origin and ideal growing conditions, (e.g. "What are the perfect growing condition for Ficus benjamina?") or
+- recommendations for plants that meet certain criteria (e.g. "Low-light plants safe for dogs").
 
 **The system then provides clear, concise, and factually grounded answers**, enabling owners to care for their plants more confidently and make informed decisions that keep both their plants and pets healthy.
 
@@ -62,7 +62,8 @@ select * from conversations;
 
 ### Update env variable
 
-Since I use GROQ API, you need to provide the API key. To do this insert your key into .env "GROQ_API_KEY" variable.
+Since I used the GROQ API, you must provide an API key. To do this, open your [.env](.env) file and set the GROQ_API_KEY variable with your key value.
+You can generate it here: https://console.groq.com
 
 ## 🚀 Running the application 
 
