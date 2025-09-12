@@ -46,11 +46,13 @@ pipenv install --dev
 ```
 
 3. Before the application starts for the first time, the database needs to be initialized.
-You can do it this way:
+First, start postgres using docker-compose:
 
 ```bash
 docker-compose up postgres
 ```
+
+4. Then, run [db_prep.py](db_prep.py]) script to initialize database.
 
 ```bash
 pipenv shell
