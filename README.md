@@ -1,5 +1,6 @@
 # Plant Knowledge Assistant
 ![Chatbot Screenshot](images/plant_knowledge_assistant.png)
+
 ## Problem Description
 
 Houseplants improve air quality, reduce stress, and boost productivity, but caring for them can be challenging. Owners often struggle with **knowing each plant’s care needs, understanding toxicity risks for pets, or finding reliable information**.
@@ -20,9 +21,9 @@ By combining a structured plant database with a conversational AI system, users 
 
 The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a knowledge base and an LLM are used in the flow):
 
-- **Retrieval Step (searching in knowledge base)** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
-- **Augmentation Step (building prompt)** – Retrieved information is combined into a context package for the AI model.  
-- **Generation Step (LLM)** – The AI produces a conversational, accurate, and user-friendly answer.  
+- **Retrieval Step** – When a user asks a question (e.g., *"Which plants are safe for cats?"*), the system searches the dataset for relevant entries.  
+- **Augmentation Step** – Retrieved information is combined into a context package for the AI model.  
+- **Generation Step** – The LLM produces an accurate and user-friendly answer based on the provided context.  
 
 ## Technology
 
@@ -63,8 +64,6 @@ My code works in two stages:
 1. Collecting Plant Names – It scrapes the Wikipedia “House plants” category with BeautifulSoup to extract plant names.
 2. Fetching Plant Details – For each plant, it uses the wikipedia library to get a summary and searches the page text for Cultivation and Toxicity sections with regex.
 
-# API
-
 ## Ingestion pipeline
 
 * [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
@@ -88,6 +87,8 @@ I used Flask app provides for interacting with the RAG system:
 Conversations are stored in database with fields for `conversation_id`, `question`, `answer`, `response_time`, `relevance`, `relevance_explanation`, `timestamp`, and optional `feedback`. 
 Feedback is stored in database with fields for `conversation_id` and  `feedback`.
 
+
+# 🚀 Running the application 
 
 ## Preparation
 
@@ -135,7 +136,7 @@ select * from conversations;
 Since I used the GROQ API, you must provide an API key. To do this, open your [.env](.env) file and set the GROQ_API_KEY variable with your key value.
 You can generate it here: https://console.groq.com
 
-## 🚀 Running the application 
+## Running 
 
 ### Running with docker-compose (Recommended)
 
@@ -246,6 +247,7 @@ Answer:
   "message": "Feedback received successfully"
 }
 ```
+
 # Experiments
 
 ## Retrieval evaluation
