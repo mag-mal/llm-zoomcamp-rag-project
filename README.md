@@ -126,7 +126,7 @@ python db_prep.py
 ````
 
 You should see a message "Database initialized ✅".
-To check the content of the database, use pgcli (already installed with pipenv):
+To check the content of the database, use pgcli (already installed with pipenv). It will ask you for password which you can copy from [.env](.env) without changes:
 ```bash
 pipenv run pgcli -h localhost -U your_username -d course_assistant -W
 ```
@@ -316,7 +316,7 @@ env | grep POSTGRES_HOST
 
 python init.py
 ```
-Then go to localhost:3000:
+Then go to http://localhost:3000:
 
 Login: "admin"
 Password: "admin"
