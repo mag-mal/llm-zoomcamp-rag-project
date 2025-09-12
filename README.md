@@ -293,6 +293,30 @@ The table below shows the proportion of responses judged by LLM as **RELEVANT**,
 
 The app is monitored with **Grafana** connected to **PostgreSQL**, which stores conversation logs and feedback.  
 
+All Grafana configurations are in the grafana folder:
+
+* [grafana/init.py](grafana/init.py) - for initializing the datasource and the dashboard.
+* [grafana/dashboard.json](grafana/dashboard.json) - the actual dashboard (taken from LLM Zoomcamp without changes).
+To initialize the dashboard, first ensure Grafana is running (it starts automatically when you do docker-compose up).
+
+Then run:
+```bash
+pipenv shell
+
+cd grafana
+
+# make sure the POSTGRES_HOST variable is not overwritten 
+
+env | grep POSTGRES_HOST
+
+python init.py
+```
+Then go to localhost:3000:
+
+Login: "admin"
+Password: "admin"
+When prompted, keep "admin" as the new password.
+
 ### 🔍 Dashboard Details
 
 - **Last 10 Questions (Table)** – recent user queries with answers and relevance.  
