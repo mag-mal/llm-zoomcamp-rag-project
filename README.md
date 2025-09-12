@@ -92,6 +92,11 @@ Feedback is stored in database with fields for `conversation_id` and  `feedback`
 
 ## Preparation
 
+0. Make sure you have installed:
+* Python 3.12
+* Docker
+* Git
+
 1. Install pipenv (dependency manager):
 ```bash
 pip install pipenv
