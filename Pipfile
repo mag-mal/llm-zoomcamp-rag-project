@@ -22,6 +22,7 @@ fastembed = "*"
 gunicorn = "*"
 pipenv = "*"
 pgcli = "*"
+hf-xet = "*"
 
 [dev-packages]
 tqdm = "*"

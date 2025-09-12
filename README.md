@@ -33,6 +33,62 @@ The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a 
 * Grafana for monitoring and PostgreSQL as the backend for it
 * openai/gpt-oss-20b as an LLM
 
+
+## Data Description
+
+The dataset contains **197 records**, each representing a plant species with detailed information, including:  
+- **`name`** – Scientific name.  
+- **`summary`** – Background information, including origin, appearance, and key characteristics.  
+- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance (may be empty).
+- **`toxicity`** – Toxicity notes (may be empty)
+
+Example entry:
+```json
+{
+  "name": "Monstera deliciosa",
+  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name 'Swiss cheese plant' is also used for the related species from the same genus, Monstera adansonii. The common name 'split-leaf philodendron' is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
+  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a 'moderately greedy plant' in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
+  "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
+}
+```
+
+### Data generation
+I gathered structured information about house plants from Wikipedia webpage: https://en.wikipedia.org/wiki/Category:House_plants. 
+You can find collected data and accompanying notebook here:
+
+* Dataset: [data/plants_data.csv](data/plants_data.csv)
+* Notebook: [notebooks/getting_data.ipynb](notebooks/getting_data.ipynb)
+
+My code works in two stages:
+1. Collecting Plant Names – It scrapes the Wikipedia “House plants” category with BeautifulSoup to extract plant names.
+2. Fetching Plant Details – For each plant, it uses the wikipedia library to get a summary and searches the page text for Cultivation and Toxicity sections with regex.
+
+# API
+
+## Ingestion pipeline
+
+* [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
+
+Based on retrieval experiment results, I developed a Python script to prepare the plant dataset for the RAG pipeline. The script connects to Qdrant, creates a collection with dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each dataset row into a vector point with metadata. Once ingested, the data can be efficiently retrieved and used by a language model for question answering.
+
+## Inference
+
+* [plant_knowledge_assistant/app.py](plant_knowledge_assistant/app.py)
+
+I used Flask app provides for interacting with the RAG system:
+
+- **`POST /ask`** – Submit a question and receive an answer from the RAG pipeline.  
+  Returns a unique `conversation_id` along with the question, answer and timestamp.  
+
+- **`POST /feedback`** – Submit feedback (`+1` or `-1`) for a given `conversation_id`.  
+  Useful for tracking performance and improving the system over time.  
+
+- **`GET /health`** – Simple health check endpoint to verify the service is running.  
+
+Conversations are stored in database with fields for `conversation_id`, `question`, `answer`, `response_time`, `relevance`, `relevance_explanation`, `timestamp`, and optional `feedback`. 
+Feedback is stored in database with fields for `conversation_id` and  `feedback`.
+
+
 ## Preparation
 
 1. Install pipenv (dependency manager):
@@ -62,6 +118,8 @@ cd plant_knowledge_assistant
 export POSTGRES_HOST=localhost
 python db_prep.py
 ````
+
+You should see a message "Database initialized ✅".
 To check the content of the database, use pgcli (already installed with pipenv):
 ```bash
 pipenv run pgcli -h localhost -U your_username -d course_assistant -W
@@ -130,13 +188,13 @@ docker-compose up postgres grafana qdrant
 docker build -t plant-knowledge-assistant .
 ```
 
-3. Run the container manually
+3. Run the container manually **updating your GROQ_API_KEY** below:
 ```bash
 docker run -it --rm \
     --network project_plant-knowledge-assistant \
     --env-file=".env" \
     -e DATA_PATH="data/plants_data.csv" \
-    -e GROQ_API_KEY=your_api_key \
+    -e GROQ_API_KEY="" \
     -e QDRANT_URL="http://qdrant:6333" \
     -p 5000:5000 \
     plant-knowledge-assistant
@@ -188,35 +246,7 @@ Answer:
   "message": "Feedback received successfully"
 }
 ```
-
-## Data Description
-
-The dataset contains **197 records**, each representing a plant species with detailed information, including:  
-- **`name`** – Scientific name.  
-- **`summary`** – Background information, including origin, appearance, and key characteristics.  
-- **`cultivation`** – Care instructions such as watering frequency, light requirements, temperature tolerance (may be empty).
-- **`toxicity`** – Toxicity notes (may be empty)
-
-Example entry:
-```json
-{
-  "name": "Monstera deliciosa",
-  "summary": "Monstera deliciosa, the Swiss cheese plant or split-leaf philodendron is a species of flowering plant. The common name 'Swiss cheese plant' is also used for the related species from the same genus, Monstera adansonii. The common name 'split-leaf philodendron' is also used for the species Thaumatophyllum bipinnatifidum, although neither species is in the genus Philodendron. Monstera deliciosa is native to tropical forests of southern Mexico, south to Panama. It has been introduced to many tropical areas, and has become a mildly invasive species in Hawaii, Seychelles, Ascension Island and the Society Islands. It is very widely grown in temperate zones as a houseplant. Although the plant contains insoluble calcium oxalate crystals, which cause a needlelike sensation when touched, the ripe fruit is edible.",
-  "cultivation": "Monstera deliciosa is commonly grown outdoors as an ornamental plant in the tropics and subtropics. The plant requires a lot of space and a rich and loose soil (ideally garden soil and compost in equal parts). If it grows in the ground it is better to plant it near a tree, where it can climb, if not against a trellis. It is a 'moderately greedy plant' in that it needs to be watered just to keep the soil slightly moist. Its hardiness is 11 (that is to say the coldest at −1 °C or 30 °F). It cannot withstand these temperatures for more than a few hours, but it can live outside in certain temperate regions (Mediterranean coast, Brittany). A steady minimum temperature of at least 13–15 °C (55–59 °F) is preferable, allowing continuous growth. Growth ceases below 10 °C (50 °F) and it is killed by frost. It needs very bright exposure, but not full sun. Forcing a M. deliciosa to flower outside of its typical tropical habitat proves to be difficult. Specific conditions need to be met for the plant to flower. However, in its tropical and subtropical habitat, the plant flowers easily. In ideal conditions it flowers about three years after planting. The plant can be propagated by taking cuttings of a mature plant or by air layering.",
-  "toxicity": "Monstera deliciosa is moderately toxic to both cats and dogs because it contains insoluble calcium oxalate crystals (needle-like). This crystal may cause injury to the mouth, tongue, and digestive tract. It also causes dermatitis by direct contact with cat and dog skin."
-}
-```
-
-### Data generation
-I gathered structured information about house plants from Wikipedia webpage: https://en.wikipedia.org/wiki/Category:House_plants. 
-You can find collected data and accompanying notebook here:
-
-* Dataset: [data/plants_data.csv](data/plants_data.csv)
-* Notebook: [notebooks/getting_data.ipynb](notebooks/getting_data.ipynb)
-
-My code works in two stages:
-1. Collecting Plant Names – It scrapes the Wikipedia “House plants” category with BeautifulSoup to extract plant names.
-2. Fetching Plant Details – For each plant, it uses the wikipedia library to get a summary and searches the page text for Cultivation and Toxicity sections with regex.
+# Experiments
 
 ## Retrieval evaluation
 
@@ -257,33 +287,7 @@ The table below shows the proportion of responses judged by LLM as **RELEVANT**,
 | GEMINI FLASH 2.5 LITE PROMPT1 (200, 7) | 0.705    | 0.255           | 0.040        |
 | GEMINI FLASH 2.5 LITE PROMPT2 (200, 7) | 0.670    | 0.230           | 0.100        |
 
-# API
-
-## Ingestion pipeline
-
-* [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
-
-Based on retrieval experiment results, I developed a Python script to prepare the plant dataset for the RAG pipeline. The script connects to Qdrant, creates a collection with dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each dataset row into a vector point with metadata. Once ingested, the data can be efficiently retrieved and used by a language model for question answering.
-
-## Inference
-
-* [plant_knowledge_assistant/app.py](plant_knowledge_assistant/app.py)
-
-I used Flask app provides for interacting with the RAG system:
-
-- **`POST /ask`** – Submit a question and receive an answer from the RAG pipeline.  
-  Returns a unique `conversation_id` along with the question, answer and timestamp.  
-
-- **`POST /feedback`** – Submit feedback (`+1` or `-1`) for a given `conversation_id`.  
-  Useful for tracking performance and improving the system over time.  
-
-- **`GET /health`** – Simple health check endpoint to verify the service is running.  
-
-Conversations are stored in database with fields for `conversation_id`, `question`, `answer`, `response_time`, `relevance`, `relevance_explanation`, `timestamp`, and optional `feedback`. 
-Feedback is stored in database with fields for `conversation_id` and  `feedback`.
-
-
-## 📊 Monitoring
+# 📊 Monitoring
 
 The app is monitored with **Grafana** connected to **PostgreSQL**, which stores conversation logs and feedback.  
 
@@ -302,7 +306,7 @@ The app is monitored with **Grafana** connected to **PostgreSQL**, which stores 
 ![Chatbot Screenshot](images/image2.png)
 ![Chatbot Screenshot](images/image3.png)
 
-## 📂 Project Structure
+# 📂 Project Structure
 
 ```
 llm-zoomcamp-rag-project/
