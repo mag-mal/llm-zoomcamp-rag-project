@@ -35,13 +35,23 @@ The **Plant Knowledge Assistant** is built as a **RAG-powered chatbot** (both a 
 
 ## Preparation
 
-### Starting database
+1. Install pipenv (dependency manager):
+```bash
+pip install pipenv
+```
 
-Before the application starts for the first time, the database needs to be initialized.
+2. Once installed, you can install the app dependencies:
+```bash
+pipenv install --dev
+```
+
+3. Before the application starts for the first time, the database needs to be initialized.
+You can do it this way:
 
 ```bash
 docker-compose up postgres
 ```
+
 ```bash
 pipenv shell
 
@@ -79,17 +89,7 @@ At this point, the API will be available at http://localhost:5000
 
 If you want to run the Flask app directly on your machine (instead of inside a Docker container), follow these steps:
 
-1. Install pipenv (dependency manager):
-```bash
-pip install pipenv
-```
-
-2. Once installed, you can install the app dependencies:
-```bash
-pipenv install --dev
-```
-
-3. Start the supporting services (Postgres, Grafana, Qdrant) with Docker:
+1. Start the supporting services (Postgres, Grafana, Qdrant) with Docker:
 ```bash
 docker-compose up postgres grafana qdrant
 ````
@@ -99,7 +99,7 @@ docker-compose up postgres grafana qdrant
 > docker-compose stop app
 > ```
 
-4. Initialize and run the app locally
+2. Initialize and run the app locally
 
 Enter the virtual environment, set environment variables, and start the Flask app:
 ```bash
