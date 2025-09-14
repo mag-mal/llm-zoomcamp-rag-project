@@ -15,7 +15,7 @@ By combining a structured plant database with a conversational AI system, users 
 **The system then provides clear, concise, and factually grounded answers**, enabling owners to care for their plants more confidently and make informed decisions that keep both their plants and pets healthy.
 
 
-## RAG pipeline
+## RAG pipeline (Retrieval flow)
 
 * [plant_knowledge_assistant/rag.py](plant_knowledge_assistant/rag.py)
 
@@ -68,7 +68,7 @@ My code works in two stages:
 
 * [plant_knowledge_assistant/ingest.py](plant_knowledge_assistant/ingest.py)
 
-Based on retrieval experiment results, I developed a Python script to prepare the plant dataset for the RAG pipeline. The script connects to Qdrant, creates a collection with dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each dataset row into a vector point with metadata. Once ingested, the data can be efficiently retrieved and used by a language model for question answering.
+Based on retrieval experiment results (below, in section Experiments), I developed a Python script to prepare the plant dataset for the RAG pipeline. The script connects to Qdrant, creates a collection with dense embeddings (Jina) for semantic search and sparse embeddings (BM25) for keyword matching, and converts each dataset row into a vector point with metadata. Once ingested, the data can be efficiently retrieved and used by a language model for question answering.
 
 ## Inference
 
@@ -149,7 +149,7 @@ The easiest way to run application is using docker-compose:
 ```bash
 docker-compose up 
 ````
-At this point, the API will be available at http://localhost:5000
+It may take few minutes. At this point, the API will be available at http://localhost:5000
 
 ### Running the application locally
 
@@ -176,7 +176,7 @@ export QDRANT_URL=http://localhost:6333
 python app.py
 ```
 
-At this point, the API will be available at http://localhost:5000
+It may take few minutes. At this point, the API will be available at http://localhost:5000
 
 ### Running with docker without Compose
 
@@ -205,7 +205,7 @@ docker run -it --rm \
     -p 5000:5000 \
     plant-knowledge-assistant
 ```
-At this point, the API will be available at http://localhost:5000.
+It may take few minutes. At this point, the API will be available at http://localhost:5000.
 
 ## Sending requests:
 
