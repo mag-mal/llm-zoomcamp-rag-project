@@ -91,8 +91,14 @@ Feedback is stored in database with fields for `conversation_id` and  `feedback`
 # 🚀 Running the application 
 
 To see a demo of the project and instructions on how to run it, check this video:
-<video src="running_app.mp4" controls width="600">
+<video src="images/running_app.mp4" controls width="600">
 </video>
+
+<p align="center">
+  <a href="images/running_app.mp4">
+    <img src="images/running_app.mp4">
+  </a>
+</p>
 
 ## Preparation
 
